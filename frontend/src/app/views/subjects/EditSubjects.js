@@ -1,16 +1,15 @@
-import React, { useContext, Fragment } from "react";
+import React, { useContext, useState, Fragment } from "react";
 import { Breadcrumb } from "@gull";
 import { useHistory, useParams } from "react-router-dom";
 import AppContext from "app/appContext";
 import * as yup from "yup";
 import { classList } from "@utils";
 import { Formik } from "formik";
-import Swal from "sweetalert2";
-// create axios function
-import api from "app/api/api";
-import { NotificationManager } from "react-notifications";
 import { updateSubject } from "app/reducers/actions/ClassroomActions";
+import { nanoid } from "nanoid";
+import { Button, Spinner } from "react-bootstrap";
 
+import Swal from "sweetalert2";
 // Validation schema
 const basicFormSchema = yup.object().shape({
   subjectName: yup.string().required("Subject Name is required"),
@@ -20,9 +19,10 @@ const basicFormSchema = yup.object().shape({
 const EditSubjects = () => {
   const history = useHistory();
   // Decclare states from context provider
-  const { dispatch, subjects } = useContext(AppContext);
+  const { dispatch, user, subjects, token } = useContext(AppContext);
 
   const { id } = useParams();
+  const [loading, setLoading] = useState(false);
 
   const subject = subjects.find((subject) => subject.id === id);
 
@@ -33,42 +33,95 @@ const EditSubjects = () => {
       subjectName: subjectName,
       units: units,
     };
+    const notifications = {
+      id: nanoid(),
+      created: Date.now(),
+      user: user.email,
+      isViewed: false,
+      action: "update",
+      content: {
+        name: subjectName,
+        location: "subject",
+        description: "click to see more information",
+      },
+    };
+    Swal.fire({
+      title: "Do you want to save the changes?",
+      showDenyButton: true,
+      showCancelButton: true,
+      confirmButtonText: "Save",
+      denyButtonText: `Don't save`,
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          setLoading(true);
+          await updateSubject(
+            id,
+            updatedSubject,
+            notifications,
+            token
+          )(dispatch);
+          await Swal.fire("Updated!", "Subject has been updated.", "success");
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    });
 
-    updateSubject(id, updatedSubject)(dispatch);
+    setLoading(false);
   };
+
   // Cancel edit redirect to list page
-  const handleCancel = () => {
-    history.push("/subjects/subjects-list");
+  const handleCancel = async () => {
+    Swal.fire({
+      title: "Confirm to cancel",
+      text: "Are you sure you want to cancel? If you cancel, all information that you have entered will be lost.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        history.push("/subjects/subjects-list");
+      }
+    });
   };
   return (
     <Fragment>
       <Breadcrumb
-        routeSegments={[{ name: "Home", path: "/" }, { name: "Edit Student" }]}
+        routeSegments={[{ name: "Home", path: "/" }, { name: "Edit Subject" }]}
       />
       {subject && (
         <div className="col-md-8">
-          <div className="card mb-4">
-            <div className="card-body">
-              <Formik
-                initialValues={subject}
-                validationSchema={basicFormSchema}
-                onSubmit={handleSubmit}
-              >
-                {({
-                  values,
-                  errors,
-                  touched,
-                  handleChange,
-                  handleBlur,
-                  handleSubmit,
-                  isSubmitting,
-                }) => {
-                  return (
-                    <form
-                      className="needs-validation"
-                      onSubmit={handleSubmit}
-                      noValidate
-                    >
+          <div className="card">
+            <div className="card-header">
+              <strong>
+                Please fill all the required (
+                <span className="text-danger">*</span>) fields
+              </strong>
+            </div>
+            <Formik
+              initialValues={subject}
+              validationSchema={basicFormSchema}
+              onSubmit={handleSubmit}
+            >
+              {({
+                values,
+                errors,
+                touched,
+                handleChange,
+                handleBlur,
+                handleSubmit,
+                isSubmitting,
+              }) => {
+                return (
+                  <form
+                    className="needs-validation"
+                    onSubmit={handleSubmit}
+                    noValidate
+                  >
+                    <div className="card-body">
                       <div className="form-row">
                         <div
                           className={classList({
@@ -79,7 +132,10 @@ const EditSubjects = () => {
                               errors.subjectName && touched.subjectName,
                           })}
                         >
-                          <label htmlFor="courseName">Subject Name</label>
+                          <label htmlFor="courseName">
+                            Subject Name (<span className="text-danger">*</span>
+                            )
+                          </label>
                           <input
                             type="text"
                             className="form-control"
@@ -102,7 +158,9 @@ const EditSubjects = () => {
                             "invalid-field": errors.units && touched.units,
                           })}
                         >
-                          <label htmlFor="validationCustom202">Units</label>
+                          <label htmlFor="validationCustom202">
+                            Units (<span className="text-danger">*</span>)
+                          </label>
                           <input
                             type="text"
                             className="form-control"
@@ -115,21 +173,41 @@ const EditSubjects = () => {
                             required
                           />
                           <div className="invalid-feedback">
-                            Unitsis required
+                            Units is required
                           </div>
                         </div>
                       </div>
-                      <button className="btn btn-success mr-2" type="submit">
-                        Save
-                      </button>
-                      <button onClick={handleCancel} className="btn btn-danger">
-                        Cancel
-                      </button>
-                    </form>
-                  );
-                }}
-              </Formik>
-            </div>
+                    </div>
+                    <div className="card-footer">
+                      <div className="mc-footer">
+                        <Button
+                          disabled={loading}
+                          variant="success"
+                          type="submit"
+                          className="mr-2"
+                        >
+                          {loading && (
+                            <Spinner
+                              as="span"
+                              variant="light"
+                              size="sm"
+                              role="status"
+                              aria-hidden="true"
+                              animation="border"
+                              className="mr-1"
+                            />
+                          )}
+                          Save Changes
+                        </Button>
+                        <Button onClick={handleCancel} variant="danger">
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </form>
+                );
+              }}
+            </Formik>
           </div>
         </div>
       )}

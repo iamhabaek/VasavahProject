@@ -1,6 +1,7 @@
 const { db } = require("../config/dbConfig");
 const asyncHandler = require("express-async-handler");
 
+// Get all courses
 const getCourses = asyncHandler(async (req, res) => {
   let query = db.collection("courses");
   let response = [];
@@ -14,6 +15,7 @@ const getCourses = asyncHandler(async (req, res) => {
   res.status(200).send({ status: "Success", data: response });
 });
 
+// Creating new course
 const setCourse = asyncHandler(async (req, res) => {
   const reqDoc = db.collection("courses");
   const queryDoc = await reqDoc
@@ -28,6 +30,7 @@ const setCourse = asyncHandler(async (req, res) => {
       id: req.body.id,
       courseName: req.body.courseName,
       yearsToFinish: req.body.yearsToFinish,
+      created: req.body.created,
     });
     res.status(200).send({ status: "Success", message: "Course Saved" });
   } else {
@@ -35,7 +38,7 @@ const setCourse = asyncHandler(async (req, res) => {
     throw new Error("Course already exists");
   }
 });
-
+// Updating course
 const updateCourse = asyncHandler(async (req, res) => {
   const reqDoc = db.collection("courses").doc(req.params.id);
   await reqDoc.update({
@@ -44,6 +47,8 @@ const updateCourse = asyncHandler(async (req, res) => {
   });
   res.status(200).send({ status: "Success", message: "Course Updated" });
 });
+
+// Deleting course
 const deleteCourse = asyncHandler(async (req, res) => {
   const reqDoc = db.collection("courses").doc(req.params.id);
   await reqDoc.delete();

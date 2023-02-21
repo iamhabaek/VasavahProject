@@ -1,39 +1,35 @@
-import React, { useContext, Fragment } from "react";
+import React, { useContext, Fragment, useState } from "react";
 import { Breadcrumb } from "@gull";
 import { Link, useHistory } from "react-router-dom";
 import { nanoid } from "nanoid";
-import { Formik } from "formik";
+import { Field, Formik } from "formik";
 import AppContext from "app/appContext";
 import * as yup from "yup";
 import { classList } from "@utils";
-import CustomSelect from "./CustomSelect";
-import { genderOptions, yearLvlOptions } from "./options";
-import { NotificationManager } from "react-notifications";
-import { Spinner, Button } from "react-bootstrap";
+import CustomSelect from "../SharedComponents/CustomSelect";
+import "react-datepicker/dist/react-datepicker.css";
+import { yearLvlOptions } from "./options";
 import { addStudent } from "app/reducers/actions/ClassroomActions";
-// create axios call
-import api from "app/api/api";
-import { useState } from "react";
+import { Button, Spinner } from "react-bootstrap";
 import Swal from "sweetalert2";
-import { useEffect } from "react";
 // formik validation schema using yup
 const basicFormSchema = yup.object().shape({
   firstName: yup.string().required("First Name is required"),
   lastName: yup.string().required("Last Name is required"),
-  age: yup.number().required("Age is required"),
+  birthDate: yup.string().required("Birth Date is required"),
   address: yup.string().required("Address is required"),
   phone: yup.string().required("Phone number is required"),
   course: yup.string().required("Course is required"),
+  email: yup.string().email().required("email is required"),
   yearLevel: yup.string().required("Year Level is required"),
   gender: yup.string().required("Gender is required"),
+  status: yup.string().required("Status is required"),
 });
 const AddStudentForm = () => {
   // Declare states from context provider
-  const { isError, isSuccess, message, courses, dispatch } =
-    useContext(AppContext);
+  const { courses, dispatch, user, token } = useContext(AppContext);
   const [loading, setLoading] = useState();
   const history = useHistory();
-
   // Generate course options
   const options = courses.map((course) => {
     return {
@@ -41,15 +37,25 @@ const AddStudentForm = () => {
       label: course.courseName,
     };
   });
+  const genderOptions = [
+    { value: "Male", label: "Male" },
+    { value: "Female", label: "Female" },
+  ];
+  const statusOptions = [
+    { value: "Regular", label: "Regular" },
+    { value: "Irregular", label: "Irregular" },
+  ];
   const initialState = {
     firstName: "",
     lastName: "",
-    age: "",
+    birthDate: "",
     gender: "",
     address: "",
     phone: "",
     course: "",
+    email: "",
     yearLevel: "",
+    status: "",
   };
 
   // Submit data to database
@@ -57,31 +63,62 @@ const AddStudentForm = () => {
     const {
       firstName,
       lastName,
-      age,
+      email,
+      birthDate,
+      status,
       address,
       phone,
       course,
       gender,
       yearLevel,
     } = values;
-    console.log(values);
+    console.log();
     const name = `${firstName} ${lastName}`;
     // declare student object
     const student = {
       id: nanoid(),
       name: name,
-      age: age,
+      birthDate: birthDate,
       gender: gender,
       address: address,
       phone: phone,
       course: course,
+      status: status,
       yearLevel: yearLevel,
+      email: email,
+      created: Date.now(),
+    };
+    const notifications = {
+      id: nanoid(),
+      created: Date.now(),
+      user: user.email,
+      isViewed: false,
+      action: "add",
+      content: {
+        name: name,
+        location: "student",
+        description: "click to see more information",
+      },
     };
     setLoading(true);
-    await addStudent(student)(dispatch);
+    await addStudent(student, notifications, token)(dispatch);
     setLoading(false);
   };
-
+  const handleCancel = async () => {
+    Swal.fire({
+      title: "Confirm to cancel",
+      text: "Are you sure you want to cancel? If you cancel, all information that you have entered will be lost.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        history.push("/students/studentslist");
+      }
+    });
+  };
   return (
     <Fragment>
       <Breadcrumb
@@ -92,6 +129,12 @@ const AddStudentForm = () => {
         ]}
       />
       <div className="card">
+        <div className="card-header">
+          <strong>
+            Please fill all the required (<span className="text-danger">*</span>
+            ) fields
+          </strong>
+        </div>
         <Formik
           initialValues={initialState}
           validationSchema={basicFormSchema}
@@ -122,7 +165,7 @@ const AddStudentForm = () => {
                       })}
                     >
                       <label htmlFor="firstName" className="ul-form__label">
-                        First Name:
+                        First Name (<span className="text-danger">*</span>)
                       </label>
                       <input
                         type="text"
@@ -135,9 +178,7 @@ const AddStudentForm = () => {
                         onBlur={handleBlur}
                         required
                       />
-                      <div className="invalid-feedback">
-                        First name is required
-                      </div>
+                      <div className="invalid-feedback">{errors.firstName}</div>
                     </div>
                     <div
                       className={classList({
@@ -146,7 +187,7 @@ const AddStudentForm = () => {
                       })}
                     >
                       <label htmlFor="firstName" className="ul-form__label">
-                        Last Name:
+                        Last Name (<span className="text-danger">*</span>)
                       </label>
                       <input
                         type="text"
@@ -159,9 +200,7 @@ const AddStudentForm = () => {
                         onBlur={handleBlur}
                         required
                       />
-                      <div className="invalid-feedback">
-                        Last name is required
-                      </div>
+                      <div className="invalid-feedback">{errors.lastName}</div>
                     </div>
                   </div>
                   <div className="custom-separator"></div>
@@ -169,48 +208,21 @@ const AddStudentForm = () => {
                     <div
                       className={classList({
                         "form-group col-md-6": true,
-                        "invalid-field": errors.age && touched.age,
+                        "invalid-field": errors.birthDate && touched.birthDate,
                       })}
                     >
                       <label htmlFor="age" className="ul-form__label">
-                        Age:
+                        Birth Date (<span className="text-danger">*</span>)
                       </label>
                       <input
-                        type="number"
                         className="form-control"
-                        id="age"
-                        placeholder="Age"
-                        name="age"
-                        value={values.age}
+                        type="date"
+                        name="birthDate"
                         onChange={handleChange}
-                        onBlur={handleBlur}
-                        required
+                        value={values.birthDate}
                       />
-                      <div className="invalid-feedback">Age is required</div>
+                      <div className="invalid-feedback">{errors.birthDate}</div>
                     </div>
-                    <div
-                      className={classList({
-                        "form-group col-md-6": true,
-                        "invalid-field": errors.gender && touched.gender,
-                      })}
-                    >
-                      <label htmlFor="gender" className="ul-form__label">
-                        Gender:
-                      </label>
-                      <CustomSelect
-                        name="gender"
-                        options={genderOptions}
-                        onChange={(value) =>
-                          setFieldValue("gender", value.value)
-                        }
-                        value={values.gender}
-                        required
-                      />
-                      <div className="invalid-feedback">Gender is required</div>
-                    </div>
-                  </div>
-                  <div className="custom-separator"></div>
-                  <div className="form-row">
                     <div
                       className={classList({
                         "form-group col-md-6": true,
@@ -218,7 +230,7 @@ const AddStudentForm = () => {
                       })}
                     >
                       <label htmlFor="address" className="ul-form__label">
-                        Address:
+                        Address (<span className="text-danger">*</span>)
                       </label>
                       <input
                         type="text"
@@ -231,9 +243,33 @@ const AddStudentForm = () => {
                         onBlur={handleBlur}
                         required
                       />
-                      <div className="invalid-feedback">
-                        Address is required
-                      </div>
+                      <div className="invalid-feedback">{errors.address}</div>
+                    </div>
+                  </div>
+                  <div className="custom-separator"></div>
+
+                  <div className="form-row">
+                    <div
+                      className={classList({
+                        "form-group col-md-6": true,
+                        "invalid-field": errors.email && touched.email,
+                      })}
+                    >
+                      <label htmlFor="phone" className="ul-form__label">
+                        Email Address (<span className="text-danger">*</span>)
+                      </label>
+                      <input
+                        type="email"
+                        className="form-control"
+                        id="email"
+                        placeholder="Email Address"
+                        name="email"
+                        value={values.email}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        required
+                      />
+                      <div className="invalid-feedback">{errors.email}</div>
                     </div>
                     <div
                       className={classList({
@@ -242,7 +278,7 @@ const AddStudentForm = () => {
                       })}
                     >
                       <label htmlFor="phone" className="ul-form__label">
-                        Phone number:
+                        Phone number (<span className="text-danger">*</span>)
                       </label>
                       <input
                         type="text"
@@ -255,9 +291,7 @@ const AddStudentForm = () => {
                         onBlur={handleBlur}
                         required
                       />
-                      <div className="invalid-feedback">
-                        Phone number is required
-                      </div>
+                      <div className="invalid-feedback">{errors.phone}</div>
                     </div>
                   </div>
                   <div className="custom-separator"></div>
@@ -269,7 +303,7 @@ const AddStudentForm = () => {
                       })}
                     >
                       <label htmlFor="course" className="ul-form__label">
-                        Course:
+                        Course (<span className="text-danger">*</span>)
                       </label>
                       <CustomSelect
                         name="course"
@@ -280,7 +314,7 @@ const AddStudentForm = () => {
                         value={values.course}
                         required
                       />
-                      <div className="invalid-feedback">Course is required</div>
+                      <div className="invalid-feedback">{errors.course}</div>
                     </div>
                     <div
                       className={classList({
@@ -289,7 +323,7 @@ const AddStudentForm = () => {
                       })}
                     >
                       <label htmlFor="yearLevel" className="ul-form__label">
-                        Year Level:
+                        Year Level (<span className="text-danger">*</span>)
                       </label>
                       <CustomSelect
                         name="yearLevel"
@@ -300,9 +334,61 @@ const AddStudentForm = () => {
                         value={values.yearLevel}
                         required
                       />
-                      <div className="invalid-feedback">
-                        Year Level is required
-                      </div>
+                      <div className="invalid-feedback">{errors.yearLevel}</div>
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div
+                      className={classList({
+                        "form-group col-md-6": true,
+                        "invalid-field": errors.gender && touched.gender,
+                      })}
+                    >
+                      <label className="ul-form__label">
+                        Gender (<span className="text-danger">*</span>)
+                      </label>
+                      {genderOptions.map((opt, idx) => (
+                        <div key={idx}>
+                          <Field
+                            className="mr-2"
+                            type="radio"
+                            name="gender"
+                            value={opt.value}
+                            // onChange={handleChange}
+                            checked={values.gender === opt.value}
+                          />
+                          <label htmlFor="gender" className="ul-form__label">
+                            {opt.label}
+                          </label>
+                        </div>
+                      ))}
+                      <div className="invalid-feedback">{errors.gender}</div>
+                    </div>
+                    <div
+                      className={classList({
+                        "form-group col-md-6": true,
+                        "invalid-field": errors.status && touched.status,
+                      })}
+                    >
+                      <label className="ul-form__label">
+                        Status (<span className="text-danger">*</span>)
+                      </label>
+                      {statusOptions.map((opt, idx) => (
+                        <div key={idx}>
+                          <Field
+                            className="mr-2"
+                            type="radio"
+                            name="status"
+                            value={opt.value}
+                            // onChange={handleChange}
+                            checked={values.status === opt.value}
+                          />
+                          <label htmlFor={opt.value} className="ul-form__label">
+                            {opt.label}
+                          </label>
+                        </div>
+                      ))}
+                      <div className="invalid-feedback">{errors.status}</div>
                     </div>
                   </div>
                 </div>
@@ -312,27 +398,27 @@ const AddStudentForm = () => {
                       <div className="col-lg-12 ">
                         <Button
                           disabled={loading}
-                          className="btn btn-primary m-1"
+                          className="mr-2"
+                          variant="primary"
                           type="submit"
                         >
-                          Submit
                           {loading && (
                             <Spinner
-                              size="sm"
+                              as="span"
                               variant="light"
+                              size="sm"
+                              role="status"
+                              aria-hidden="true"
+                              animation="border"
                               className="mr-1"
-                              animation="grow"
                             />
                           )}
+                          Submit
                         </Button>
-                        <Link to="/students/studentslist">
-                          <button
-                            type="button"
-                            className="btn btn-outline-secondary m-1"
-                          >
-                            Cancel
-                          </button>
-                        </Link>
+
+                        <Button onClick={handleCancel} variant="danger">
+                          Cancel
+                        </Button>
                       </div>
                     </div>
                   </div>

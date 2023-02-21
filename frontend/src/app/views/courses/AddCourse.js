@@ -1,4 +1,4 @@
-import React, { useState, useContext, createContext, Fragment } from "react";
+import React, { useState, useContext, Fragment } from "react";
 import { Breadcrumb } from "@gull";
 import { useHistory } from "react-router-dom";
 import { nanoid } from "nanoid";
@@ -8,11 +8,8 @@ import * as yup from "yup";
 import { classList } from "@utils";
 import { Link } from "react-router-dom";
 import { Button, Spinner } from "react-bootstrap";
-import { NotificationManager } from "react-notifications";
-import Swal from "sweetalert2";
-// Create axios function
-import api from "app/api/api";
 import { addCourse } from "app/reducers/actions/ClassroomActions";
+import Swal from "sweetalert2";
 // validation schema
 const basicFormSchema = yup.object().shape({
   courseName: yup.string().required("Course Name is required"),
@@ -21,7 +18,7 @@ const basicFormSchema = yup.object().shape({
 
 const AddCourse = () => {
   // States from context provider
-  const { courses, dispatch } = useContext(AppContext);
+  const { dispatch, token, user } = useContext(AppContext);
   const history = useHistory();
   const [loading, setLoading] = useState();
   // submit data function
@@ -34,54 +31,91 @@ const AddCourse = () => {
       id: nanoid(),
       courseName: courseName,
       yearsToFinish: Number(yearsToFinish),
+      created: Date.now(),
+    };
+    const notifications = {
+      id: nanoid(),
+      created: Date.now(),
+      user: user.email,
+      isViewed: false,
+      action: "add",
+      content: {
+        name: courseName,
+        location: "course",
+        description: "click to see more information",
+      },
     };
     setLoading(true);
-    addCourse(course)(dispatch);
+    await addCourse(course, notifications, token)(dispatch);
     setLoading(false);
+  };
+  const handleCancel = async () => {
+    Swal.fire({
+      title: "Confirm to cancel",
+      text: "Are you sure you want to cancel? If you cancel, all information that you have entered will be lost.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        history.push("/courses/courses-list");
+      }
+    });
   };
   return (
     <Fragment>
       <Breadcrumb
-        routeSegments={[{ name: "Home", path: "/" }, { name: "Add Courses" }]}
+        routeSegments={[{ name: "Home", path: "/" }, { name: "Add Course" }]}
       />
 
-      <div className="col-md-8">
-        <div className="card mb-4">
-          <div className="card-body">
-            <Formik
-              initialValues={{
-                courseName: "",
-                yearsToFinish: "",
-              }}
-              validationSchema={basicFormSchema}
-              onSubmit={handleSubmit}
-            >
-              {({
-                values,
-                errors,
-                touched,
-                handleChange,
-                handleBlur,
-                handleSubmit,
-                isSubmitting,
-              }) => {
-                return (
-                  <form
-                    className="needs-validation"
-                    onSubmit={handleSubmit}
-                    noValidate
-                  >
+      <div className="col-md-12">
+        <div className="card">
+          <div className="card-header">
+            <strong>
+              Please fill all the required (
+              <span className="text-danger">*</span>) fields
+            </strong>
+          </div>
+
+          <Formik
+            initialValues={{
+              courseName: "",
+              yearsToFinish: "",
+            }}
+            validationSchema={basicFormSchema}
+            onSubmit={handleSubmit}
+          >
+            {({
+              values,
+              errors,
+              touched,
+              handleChange,
+              handleBlur,
+              handleSubmit,
+              isSubmitting,
+            }) => {
+              return (
+                <form
+                  className="needs-validation"
+                  onSubmit={handleSubmit}
+                  noValidate
+                >
+                  <div className="card-body">
                     <div className="form-row">
                       <div
                         className={classList({
-                          "col-md-4 mb-3": true,
+                          "col-md-6 mb-3": true,
                           "valid-field":
                             !errors.courseName && touched.courseName,
                           "invalid-field":
                             errors.courseName && touched.courseName,
                         })}
                       >
-                        <label htmlFor="courseName">Course Name</label>
+                        <label htmlFor="courseName">
+                          Course Name (<span className="text-danger">*</span>)
+                        </label>
                         <input
                           type="text"
                           className="form-control"
@@ -99,7 +133,7 @@ const AddCourse = () => {
                       </div>
                       <div
                         className={classList({
-                          "col-md-4 mb-3": true,
+                          "col-md-6 mb-3": true,
                           "valid-field":
                             !errors.yearsToFinish && touched.yearsToFinish,
                           "invalid-field":
@@ -107,7 +141,8 @@ const AddCourse = () => {
                         })}
                       >
                         <label htmlFor="validationCustom202">
-                          Years To Finish
+                          Years To Finish (
+                          <span className="text-danger">*</span>)
                         </label>
                         <select
                           className="form-control"
@@ -125,34 +160,33 @@ const AddCourse = () => {
                         </div>
                       </div>
                     </div>
-                    <Button
-                      disabled={loading}
-                      className=" text-12 btn btn-primary m-1"
-                      type="submit"
-                    >
-                      Submit
-                      {loading && (
-                        <Spinner
-                          size="sm"
-                          variant="light"
-                          className="mr-1"
-                          animation="grow"
-                        />
-                      )}
-                    </Button>
-                    <Link to="/courses/courses-list">
-                      <button
-                        type="button"
-                        className="btn text-12 btn-outline-secondary m-1"
+                  </div>
+                  <div className="card-footer">
+                    <div className="mc-footer">
+                      <Button
+                        disabled={loading}
+                        className=" text-12 btn btn-primary mr-2"
+                        type="submit"
                       >
+                        {loading && (
+                          <Spinner
+                            size="sm"
+                            variant="light"
+                            className="mr-1"
+                            animation="border"
+                          />
+                        )}
+                        Submit
+                      </Button>
+                      <Button onClick={handleCancel} variant="danger">
                         Cancel
-                      </button>
-                    </Link>
-                  </form>
-                );
-              }}
-            </Formik>
-          </div>
+                      </Button>
+                    </div>
+                  </div>
+                </form>
+              );
+            }}
+          </Formik>
         </div>
       </div>
     </Fragment>

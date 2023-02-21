@@ -42,9 +42,6 @@ const ForgotPassword = () => {
                   <h1 className="mb-3 mt-8 text-13">
                     Check email inbox to reset password
                   </h1>
-                  <Link to="/session/signup" className="text-primary">
-                    <u>No Account? Sign up here!</u>
-                  </Link>
                 </div>
                 {error && <Alert variant="danger">Email not found</Alert>}
                 <Formik
@@ -88,11 +85,8 @@ const ForgotPassword = () => {
                         </div>
                       </div>
                       <div className="d-flex flex-row align-items-center mt-3 justify-content-between">
-                        <Link
-                          to="/session/forgot-password"
-                          className="text-primary"
-                        >
-                          <u>Already have an account? Sign in here</u>
+                        <Link to="/session/signin" className="text-primary">
+                          <u> Sign in here</u>
                         </Link>
                         <Button
                           disabled={isLoading}

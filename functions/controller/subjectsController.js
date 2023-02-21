@@ -1,6 +1,7 @@
 const { db } = require("../config/dbConfig");
 const asyncHandler = require("express-async-handler");
 
+// Get all subjects
 const getSubjects = asyncHandler(async (req, res) => {
   let query = db.collection("subjects");
   let response = [];
@@ -14,6 +15,7 @@ const getSubjects = asyncHandler(async (req, res) => {
   res.status(200).send({ status: "Success", data: response });
 });
 
+// Creating new subject
 const setSubject = asyncHandler(async (req, res) => {
   if (!req.body.subjectName || !req.body.units) {
     res.status(400);
@@ -23,10 +25,12 @@ const setSubject = asyncHandler(async (req, res) => {
     id: req.body.id,
     subjectName: req.body.subjectName,
     units: req.body.units,
+    created: req.body.created,
   });
   res.status(200).send({ status: "Success", message: "Course Saved" });
 });
 
+// Updating subject
 const updateSubject = asyncHandler(async (req, res) => {
   const reqDoc = db.collection("subjects").doc(req.params.id);
   await reqDoc.update({
@@ -35,11 +39,14 @@ const updateSubject = asyncHandler(async (req, res) => {
   });
   res.status(200).send({ status: "Success", message: "Subject Updated" });
 });
+
+// Deleting subject
 const deleteSubject = asyncHandler(async (req, res) => {
   const reqDoc = db.collection("subjects").doc(req.params.id);
   await reqDoc.delete();
   res.status(200).send({ status: "Success", message: "Subject Removed" });
 });
+
 module.exports = {
   setSubject,
   getSubjects,

@@ -1,33 +1,31 @@
 import { lazy } from "react";
-
-const ClassroomsList = lazy(() => import("./ClassroomsList"));
-const AppySlot = lazy(() => import("./ApplySlot"));
-const AssignStudents = lazy(() => import("./AssignStudents"));
+import { authRoles } from "app/auth/authRoles";
+const MyClasses = lazy(() => import("./MyClasses"));
 const ViewAssignedStudents = lazy(() => import("./ViewAssignedStudents"));
 const AssignNew = lazy(() => import("./AssignNew"));
+const ScheduleList = lazy(() => import("./ScheduleList"));
 
 const classroomsRoutes = [
   {
-    path: "/classrooms/classrooms-list",
-    component: ClassroomsList,
-  },
-
-  {
-    path: "/classrooms/applyslot/:id",
-    component: AppySlot,
-  },
-  {
-    path: "/classrooms/classrooms-assign",
-    component: AssignStudents,
+    path: "/classrooms/my-classes/",
+    component: MyClasses,
+    auth: authRoles.teacher,
   },
   {
     path: "/classrooms/assignStudents/list/:id",
     component: ViewAssignedStudents,
+    auth: authRoles.teacher,
   },
 
   {
     path: "/classrooms/assignStudents/:id",
     component: AssignNew,
+    auth: authRoles.teacher,
+  },
+  {
+    path: "/classrooms/schedule",
+    component: ScheduleList,
+    auth: authRoles.teacher,
   },
 ];
 

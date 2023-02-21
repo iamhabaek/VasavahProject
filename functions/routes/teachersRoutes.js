@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const { protect } = require("../middleware/authMiddleware");
 
 const {
   setTeacher,
@@ -8,9 +9,9 @@ const {
   deleteTeacher,
 } = require("../controller/teachersControllers");
 
-router.get("/", getTeachers);
-router.post("/", setTeacher);
-router.put("/:id", updateTeacher);
-router.delete("/:id", deleteTeacher);
+router.get("/", protect, getTeachers);
+router.post("/", protect, setTeacher);
+router.put("/:id", protect, updateTeacher);
+router.delete("/:id", protect, deleteTeacher);
 
 module.exports = router;

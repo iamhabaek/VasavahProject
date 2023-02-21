@@ -4,15 +4,19 @@ import * as yup from "yup";
 import { Link, useHistory } from "react-router-dom";
 import { Button, Spinner, Alert } from "react-bootstrap";
 import AppContext from "app/appContext";
-import logo from "../../assets/logo.png";
+import logo from "../../assets/smudge.jpg";
+
 import { classList } from "@utils";
 const SigninSchema = yup.object().shape({
-  email: yup.string().email().required("email is required"),
-  password: yup.string().required("password is required"),
+  email: yup
+    .string()
+    .email("Invalid email address")
+    .required("Please fill out the email field"),
+  password: yup.string().required("Please fill out the password field"),
 });
 
 const Signin = () => {
-  const { login } = useContext(AppContext);
+  const { login, user } = useContext(AppContext);
   const [error, setError] = useState();
   const [isLoading, setIsLoading] = useState(false);
   const history = useHistory();
@@ -22,7 +26,7 @@ const Signin = () => {
     setIsLoading(true);
     try {
       await login(email, password);
-      history.push("/classrooms/classrooms-list");
+      history.push("/classrooms/schedule");
     } catch (error) {
       setError(error.message);
     }
@@ -37,13 +41,10 @@ const Signin = () => {
             <div className="col-md-10">
               <div className="p-4">
                 <div className="text-center">
-                  <img src={logo} className="" />
+                  <img src={logo} />
                 </div>
                 <div className="d-flex flex-row justify-content-between">
                   <h1 className="mb-3 mt-8 text-13">Sign in to your account</h1>
-                  <Link to="/session/signup" className="text-primary">
-                    <u>No Account? Sign up here!</u>
-                  </Link>
                 </div>
                 {error && (
                   <Alert variant="danger">Invalid email or password</Alert>
@@ -67,11 +68,11 @@ const Signin = () => {
                         className={classList({
                           "input-group": true,
                           "mb-2": true,
-                          "invalid-field": errors.email && touched.email,
+                          "invalid-field": errors.email,
                         })}
                       >
-                        <div class="input-group-prepend">
-                          <span class="input-group-text" id="basic-addon1">
+                        <div className="input-group-prepend">
+                          <span className="input-group-text" id="basic-addon1">
                             <i className="nav-icon i-Administrator "></i>
                           </span>
                         </div>
@@ -84,7 +85,7 @@ const Signin = () => {
                           onBlur={handleBlur}
                           value={values.email}
                         />
-                        <div className="invalid-tooltip ml-5">
+                        <div className="invalid-feedback ml-5">
                           {errors.email}
                         </div>
                       </div>
@@ -93,7 +94,7 @@ const Signin = () => {
                         className={classList({
                           "input-group": true,
                           "mt-3": true,
-                          "invalid-field": errors.password && touched.password,
+                          "invalid-field": errors.password,
                         })}
                       >
                         <div className="input-group-prepend">
@@ -110,7 +111,7 @@ const Signin = () => {
                           onBlur={handleBlur}
                           value={values.password}
                         />
-                        <div className="invalid-tooltip ml-5">
+                        <div className="invalid-feedback ml-5">
                           {errors.password}
                         </div>
                       </div>

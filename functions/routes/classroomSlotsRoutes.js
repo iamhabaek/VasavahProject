@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-
+const { protect } = require("../middleware/authMiddleware");
 const {
   setClassroomSlots,
   getClassroomSlots,
@@ -8,13 +8,17 @@ const {
   swapSlots,
   deleteClassroomSlots,
   updateClassroomSlot,
+  denySlot,
+  approveSlot,
 } = require("../controller/classroomSlotsController");
 
-router.get("/", getClassroomSlots);
-router.post("/", setClassroomSlots);
-router.put("/timeSlot/:id", updateTimeSlots);
-router.put("/:id", updateClassroomSlot);
-router.put("/", swapSlots);
-router.delete("/:id", deleteClassroomSlots);
+router.get("/", protect, getClassroomSlots);
+router.post("/", protect, setClassroomSlots);
+router.put("/timeSlot/:id", protect, updateTimeSlots);
+router.put("/:id", protect, updateClassroomSlot);
+router.put("/", protect, swapSlots);
+router.delete("/deny/:id", protect, denySlot);
+router.put("/approve/:id", protect, approveSlot);
+router.delete("/:id", protect, deleteClassroomSlots);
 
 module.exports = router;

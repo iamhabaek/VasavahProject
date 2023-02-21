@@ -1,61 +1,32 @@
-import React, { Component, Suspense } from "react";
+import React, { Suspense, useContext } from "react";
 import { renderRoutes } from "react-router-config";
 import Layout1Sidenav from "./Layout1Sidenav";
-import Footer from "../SharedComponents/Footer";
 import Layout1Header from "./Layout1Header";
-import { connect } from "react-redux";
-import PropTypes from "prop-types";
 import { classList } from "@utils";
-import { setLayoutSettings } from "app/redux/actions/LayoutActions";
-import { merge } from "lodash";
+import AppContext from "app/appContext";
 import Loading from "@gull/components/GullLoadable/Loading";
 
-class Layout1 extends Component {
-  state = {};
+const Layout1 = ({ routes }) => {
+  const { user } = useContext(AppContext);
+  return (
+    <div>
+      <div className={`app-admin-wrap layout-sidebar-large`}>
+        <Layout1Header></Layout1Header>
+        {user && <Layout1Sidenav user={user} />}
+        {/* sidebar */}
 
-  handleSearchBoxClose = () => {
-    let { setLayoutSettings, settings } = this.props;
-    setLayoutSettings(
-      merge({}, settings, {
-        layout1Settings: {
-          searchBox: {
-            open: false,
-          },
-        },
-      })
-    );
-  };
-
-  render() {
-    let { settings, routes } = this.props;
-
-    return (
-      <div>
-        <div className={`app-admin-wrap layout-sidebar-large`}>
-          <Layout1Header></Layout1Header>
-          <Layout1Sidenav />
-          {/* sidebar */}
-
-          <div
-            className={classList({
-              "main-content-wrap d-flex flex-column": true,
-              "sidenav-open": settings.layout1Settings.leftSidebar.open,
-            })}
-          >
-            <Suspense fallback={<Loading />}>
-              <div className="main-content">{renderRoutes(routes)}</div>
-            </Suspense>
-            {settings.footer.show && <Footer></Footer>}
-          </div>
+        <div
+          className={classList({
+            "main-content-wrap d-flex flex-column": true,
+            "sidenav-open": true,
+          })}
+        >
+          <Suspense fallback={<Loading />}>
+            <div className="main-content">{renderRoutes(routes)}</div>
+          </Suspense>
         </div>
       </div>
-    );
-  }
-}
-
-const mapStateToProps = (state) => ({
-  setLayoutSettings: PropTypes.func.isRequired,
-  settings: state.layout.settings,
-});
-
-export default connect(mapStateToProps, { setLayoutSettings })(Layout1);
+    </div>
+  );
+};
+export default Layout1;

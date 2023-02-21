@@ -1,18 +1,17 @@
 const express = require("express");
 const router = express.Router();
+const { protect } = require("../middleware/authMiddleware");
 
 const {
   setClassroom,
   getClassrooms,
   updateClassroom,
-  applySlot,
   deleteClassroom,
 } = require("../controller/classroomsController");
 
-router.get("/", getClassrooms);
-router.post("/", setClassroom);
-router.put("/apply/:id", applySlot);
-router.put("/:id", updateClassroom);
-router.delete("/:id", deleteClassroom);
+router.get("/", protect, getClassrooms);
+router.post("/", protect, setClassroom);
+router.put("/:id", protect, updateClassroom);
+router.delete("/:id", protect, deleteClassroom);
 
 module.exports = router;

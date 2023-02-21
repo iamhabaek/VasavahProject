@@ -10,17 +10,24 @@ import coursesRoutes from "./views/courses/coursesRoutes";
 import reportsRoutes from "./views/reports/reportsRoutes";
 import masterClassRoutes from "./views/masterClass/masterClassRoutes";
 import manageClassroomsRoutes from "./views/manageClassrooms/manageClassroomsRoutes";
+import dashboardRoutes from "./views/dashboard/dashboardRoutes";
+import userRoutes from "./views/users/userRoutes";
+import requestsRoutes from "./views/requests/requestsRoutes";
+import approvalRoutes from "./views/approvals/approvalRoutes";
+import { authRoles } from "./auth/authRoles";
 const redirectRoute = [
   {
     path: "/",
     exact: true,
-    component: () => <Redirect to="/classrooms/classrooms-list" />,
+    component: () => <Redirect to="/classrooms/schedule" />,
+    auth: authRoles.teacher,
   },
 ];
 
 const errorRoute = [
   {
     component: () => <Redirect to="/session/404" />,
+    auth: authRoles.admin,
   },
 ];
 
@@ -30,6 +37,7 @@ const routes = [
     path: "/",
     component: AuthGuard,
     routes: [
+      ...userRoutes,
       ...classroomsRoutes,
       ...studentsRoutes,
       ...teachersRoutes,
@@ -38,6 +46,9 @@ const routes = [
       ...reportsRoutes,
       ...masterClassRoutes,
       ...manageClassroomsRoutes,
+      ...dashboardRoutes,
+      ...requestsRoutes,
+      ...approvalRoutes,
       ...redirectRoute,
       ...errorRoute,
     ],

@@ -3,6 +3,7 @@ import { lazy } from "react";
 const AddSubjects = lazy(() => import("./AddSubject"));
 const SubjectsLists = lazy(() => import("./SubjectsLists"));
 const EditSubject = lazy(() => import("./EditSubjects"));
+const SubjectsReport = lazy(() => import("./SubjectsReport"));
 
 const subjectsRoutes = [
   {
@@ -12,6 +13,10 @@ const subjectsRoutes = [
   {
     path: "/subjects/subjects-list",
     component: SubjectsLists,
+  },
+  {
+    path: "/subjects/report",
+    component: SubjectsReport,
   },
   {
     path: "/subjects/edit/:id",

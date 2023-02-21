@@ -1,40 +1,50 @@
 import React, { useContext, Fragment, useState } from "react";
 import { Breadcrumb } from "@gull";
-import { Link, useHistory, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Formik } from "formik";
 import AppContext from "app/appContext";
 import api from "app/api/api";
 import * as yup from "yup";
 import { classList } from "@utils";
-import CustomSelect from "./CustomSelect";
-import Swal from "sweetalert2";
+import CustomSelect from "../SharedComponents/CustomSelect";
 import { Button, Spinner } from "react-bootstrap";
-import { NotificationManager } from "react-notifications";
 import { swapSlot } from "app/reducers/actions/ClassroomActions";
-
+import { nanoid } from "nanoid";
+import Swal from "sweetalert2";
 const basicFormSchema = yup.object().shape({
   timeSlot: yup.string().required("Time Slot is required"),
 });
 const SwapSLot = () => {
-  const { classrooms, classroomSlots, dispatch } = useContext(AppContext);
-  const history = useHistory();
+  const {
+    classrooms,
+    classroomSlots,
+    user,
+    teachers,
+    subjects,
+    dispatch,
+    token,
+  } = useContext(AppContext);
   const { id } = useParams();
   const [loading, setLoading] = useState();
   const classroomSlot = classroomSlots.find(
     (classroomSlot) => classroomSlot.id === id
   );
   const filteredSlots = classroomSlots.filter(
-    (slot) => slot.id !== id && slot.classroomId === classroomSlot.classroomId
+    (slot) => slot.id !== id && slot.resourceId === classroomSlot.resourceId
   );
   const options = filteredSlots.map((slot) => {
     return {
       value: slot.id,
       label: `${
-        classrooms.find((classroom) => classroom.id === slot.classroomId)
-          .roomName
-      } ${slot.startTime}-${slot.endTime} Teacher:${slot.teacher} Subject:${
-        slot.subject
-      } Course:${slot.course}}`,
+        classrooms.find((classroom) => classroom.id === slot.resourceId)
+          ? classrooms.find((classroom) => classroom.id === slot.resourceId)
+              .title
+          : "No classroom found"
+      } ${slot.startTime}-${slot.endTime} Teacher:${
+        teachers.find((teacher) => teacher.id === slot.teacher)
+          ? teachers.find((teacher) => teacher.id === slot.teacher).teacherName
+          : "No Teacher Found"
+      } Subject:${slot.subject.label} Course:${slot.course.label}`,
     };
   });
   const handleSubmit = async (values) => {
@@ -47,12 +57,35 @@ const SwapSLot = () => {
       slot1Id: slot1.id,
       slot1Start: slot2.startTime,
       slot1End: slot2.endTime,
+      slot1StartDate: slot2.startDate,
+      slot1EndDate: slot2.endDate,
+      slot1Days: slot2.days,
       slot2Id: slot2.id,
       slot2Start: slot1.startTime,
       slot2End: slot1.endTime,
+      slot2StartDate: slot1.startDate,
+      slot2EndDate: slot1.endDate,
+      slot2Days: slot1.days,
     };
-    setLoading(true);
-    swapSlot(updatedValues)(dispatch);
+
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes,Swap it!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          setLoading(true);
+          await swapSlot(updatedValues, token)(dispatch);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    });
     setLoading(false);
   };
 
@@ -60,9 +93,8 @@ const SwapSLot = () => {
     <Fragment>
       <Breadcrumb
         routeSegments={[
-          { name: "Home", path: "/" },
-          { name: "Classrooms List", path: "/classrooms/classrooms-list" },
-          { name: "Apply for slot" },
+          { name: "Occupied List", path: "/masterClass/list" },
+          { name: "Swap for slot" },
         ]}
       />
       <div className="card">
@@ -73,16 +105,7 @@ const SwapSLot = () => {
           validationSchema={basicFormSchema}
           onSubmit={handleSubmit}
         >
-          {({
-            values,
-            errors,
-            touched,
-            handleChange,
-            handleBlur,
-            handleSubmit,
-            isSubmitting,
-            setFieldValue,
-          }) => {
+          {({ values, errors, touched, handleSubmit, setFieldValue }) => {
             return (
               <form
                 className="needs-validation"
@@ -131,7 +154,7 @@ const SwapSLot = () => {
                               size="sm"
                               variant="light"
                               className="mr-1"
-                              animation="grow"
+                              animation="border"
                             />
                           )}
                         </Button>

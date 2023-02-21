@@ -6,26 +6,28 @@ import { Breadcrumb } from "@gull";
 import { useHistory, useParams } from "react-router-dom";
 
 const GenerateReport = () => {
-  const { classrooms, students, classroomSlots } = useContext(AppContext);
+  const { classrooms, students, classroomSlots, teachers, subjects } =
+    useContext(AppContext);
 
   const { id } = useParams();
   const history = useHistory();
   const handleClick = () => {
     setTimeout(() => {
-      history.push("/classrooms/classrooms-assign");
+      history.push("/classrooms/my-classes/");
     }, 5000);
   };
   const classroomSlot = classroomSlots.find(
     (classroomSlot) => classroomSlot.id === id
   );
+  console.log(classroomSlot);
   return (
     <Fragment>
       <Breadcrumb
         routeSegments={[
           { name: "Home", path: "/" },
           {
-            name: "Assign and Generate",
-            path: "/classrooms/classrooms-assign",
+            name: "My Classes",
+            path: "/classrooms/my-classes/",
           },
           { name: "Generate" },
         ]}
@@ -37,6 +39,8 @@ const GenerateReport = () => {
               classrooms={classrooms}
               students={students}
               classroomSlot={classroomSlot}
+              teachers={teachers}
+              subjects={subjects}
             />
           )
         }
@@ -60,6 +64,8 @@ const GenerateReport = () => {
           classrooms={classrooms}
           students={students}
           classroomSlot={classroomSlot}
+          teachers={teachers}
+          subjects={subjects}
         />
       )}
     </Fragment>
